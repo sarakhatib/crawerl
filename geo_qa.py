@@ -27,6 +27,14 @@ government_form_of = rdflib.URIRef(concat_prefix_to_entity_or_property("governme
 official_language_of = rdflib.URIRef(concat_prefix_to_entity_or_property("official_language_of"))
 
 
+def alpha_words(word):
+    lst = word.split(" ")
+    for w in lst:
+        if (not w.isalpha()) and ('-' not in w) and ('–' not in w):
+            return False
+    return True
+
+
 def replace_space(name):
     return name.replace(" ", "_").lower()
 
@@ -60,11 +68,9 @@ def ie_countries():
         # getting capitals
         t = doc.xpath("/html/body/div[3]/div[3]/div[5]/div[1]/table[contains(@class,'infobox')]//tr[contains(th/text("
                       "),'Capital')]//a/text()")
-        if len(t) == 0 or t[0] == "de jure":
-            Capital = rdflib.URIRef(concat_prefix_to_entity_or_property("None"))
-        else:
+        if len(t) != 0 and t[0] != "de jure":
             Capital = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0])))
-        g.add((Capital, capital_of, Country))
+            g.add((Capital, capital_of, Country))
 
         # getting area
         t = doc.xpath(
@@ -74,9 +80,7 @@ def ie_countries():
             area = t[0].split(" ")
             area = area[0] + " km squared"
             Area = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(area)))
-        else:
-            Area = rdflib.URIRef(concat_prefix_to_entity_or_property("None"))
-        g.add((Area, area_of, Country))
+            g.add((Area, area_of, Country))
 
         # getting government form
         gov = doc.xpath(
@@ -105,9 +109,7 @@ def ie_countries():
                     g.add((Government, government_form_of, Country))
                     lst.append(form)
             #print(country_tuple[0]+": "+str(lst))
-        else:
-            Government = rdflib.URIRef(concat_prefix_to_entity_or_property("None"))
-            g.add((Government, government_form_of, Country))
+
 
         #getting population
         t = doc.xpath(
@@ -131,26 +133,58 @@ def ie_countries():
             Population = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(pop)))
             # print(country_tuple[0] +" :" + pop)
             # cnt+=1
-        else:
-            #print(country_tuple[0])
-            Population = rdflib.URIRef(concat_prefix_to_entity_or_property("None"))
-        g.add((Population, population_of, Country))
+            g.add((Population, population_of, Country))
+
 
         #getting president
+        t = doc.xpath('//table[contains(@class, "infobox")]/tbody//tr[th//text()="President"]/td/a')
+        if len(t) != 0:
+            #cnt+=1
+            President = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
+            add_urls(t[0].text,t[0].attrib['href'],people_url_dict)
+            g.add((President, president_of, Country))
+
+
+        #getting prime misiter
+        t = doc.xpath('//table[contains(@class, "infobox")]/tbody//tr[th//text()="Prime Minister"]/td/a')
+        if len(t) != 0:
+            cnt+=1
+            Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
+            add_urls(t[0].text,t[0].attrib['href'],people_url_dict)
+            #print(country_tuple[0] + ": "+t[0].text)
+            g.add((Prime, prime_minister_of, Country))
 
 
 
-    print(cnt)
+    #print(cnt)
 
-
-def alpha_words(word):
-    lst = word.split(" ")
-    for w in lst:
-        if (not w.isalpha()) and ('-' not in w) and ('–' not in w):
-            return False
-    return True
+def ie_people():
+    for person_tuple in people_url_dict.items():
+        url = person_tuple[1]
+        person = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(person_tuple[0])))
+        r = requests.get(url)
+        doc = lxml.html.fromstring(r.content)
+        #get birth date
+        temp = doc.xpath('//table[contains(@class, "infobox")]/tbody/tr[th//text()="Born"]//span[@class="bday"]//text()')
+        bday= " "
+        if len(temp) != 0:
+            bday = temp[0]
+            date = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(temp[0])))
+            g.add((person, bday_is, date))
+        place = doc.xpath('//table[contains(@class, "infobox")]/tbody/tr[th//text()="Born"]/td//text()')
+        for p in place:
+            k = p
+        k = str(k).split(",")
+        if len(k)==1:
+            temp = k[0].lstrip()
+        else:
+            temp = k[-1].lstrip()
+        country = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(temp)))
+        g.add((person,born_in,country))
+        print(person_tuple[0] + ": " + bday + temp)
 
 
 initiate_url_dict()
 ie_countries()
+ie_people()
 # g.serialize("ontology.nt", format="nt")
