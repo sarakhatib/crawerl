@@ -36,7 +36,7 @@ def alpha_words(word):
 
 
 def replace_space(name):
-    return name.replace(" ", "_").lower()
+    return name.replace(" ", "_")
 
 
 def add_urls(name, url, entity_dict):
@@ -145,6 +145,8 @@ def ie_countries():
             g.add((President, president_of, Country))
 
 
+
+
         #getting prime misiter
         t = doc.xpath('//table[contains(@class, "infobox")]/tbody//tr[th//text()="Prime Minister"]/td/a')
         if len(t) != 0:
@@ -169,22 +171,53 @@ def ie_people():
         bday= " "
         if len(temp) != 0:
             bday = temp[0]
-            date = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(temp[0])))
-            g.add((person, bday_is, date))
+            if temp[0]==' ' and len(temp) > 1:
+                bday = temp[1]
+            if bday!=' ' or bday !='':
+                date = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(temp[0])))
+                g.add((person, bday_is, date))
         place = doc.xpath('//table[contains(@class, "infobox")]/tbody/tr[th//text()="Born"]/td//text()')
+        arr = []
         for p in place:
-            k = p
-        k = str(k).split(",")
-        if len(k)==1:
-            temp = k[0].lstrip()
-        else:
-            temp = k[-1].lstrip()
+            arr.append(p)
+        temp = ''
+        for i in range(len(arr)):
+            temp = arr[-1]
+            if temp[-1]==')':
+                for j in range(len(arr)):
+                    if ('(') in arr[-1]:
+                        arr=arr[:-1]
+                        break
+                    arr = arr[:-1]
+                continue
+            if temp[-1]==']':
+                for j in range(len(arr)):
+                    if ('[') in arr[-1]:
+                        arr = arr[:-1]
+                        break
+                    arr = arr[:-1]
+                continue
+            if temp[-1]==' ':
+                arr = arr[:-1]
+                continue
+            break
+        if len(temp)==0 or has_numbers(temp):
+            continue
+        temp = temp.split(",")
+        temp = temp[-1].lstrip()
         country = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(temp)))
         g.add((person,born_in,country))
-        print(person_tuple[0] + ": " + bday + temp)
+        print(person_tuple[0] + ": " + bday +" <-> "+ temp)
+
+def has_numbers(inputString):
+    return any(char.isdigit() for char in inputString)
 
 
-initiate_url_dict()
-ie_countries()
-ie_people()
-# g.serialize("ontology.nt", format="nt")
+def main():
+    initiate_url_dict()
+    ie_countries()
+    ie_people()
+    g.serialize("ontology.nt", format="nt", errors="ignore")
+
+main()
+
