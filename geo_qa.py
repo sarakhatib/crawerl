@@ -36,7 +36,9 @@ def alpha_words(word):
 
 
 def replace_space(name):
-    return name.replace(" ", "_")
+    name = name.replace(" ", "_")
+    name = name.replace("&nbsp","_")
+    return name
 
 
 def add_urls(name, url, entity_dict):
@@ -68,17 +70,21 @@ def ie_countries():
         # getting capitals
         t = doc.xpath("/html/body/div[3]/div[3]/div[5]/div[1]/table[contains(@class,'infobox')]//tr[contains(th/text("
                       "),'Capital')]//a/text()")
-        if len(t) != 0 and t[0] != "de jure":
+        if len(t) != 0 and t[0] != "de jure" and t[0] != "[note_1]":
             Capital = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0])))
             g.add((Capital, capital_of, Country))
 
         # getting area
         t = doc.xpath(
-            "/html/body/div[3]/div[3]/div[5]/div[1]/table[contains(@class,'infobox')]//tr[contains(th//text(), "
-            "'Area')]/following-sibling::tr/td/text()")
+            "//table[contains(@class,'infobox')]//tr[contains(th//text(),'Area')]/following-sibling::tr/td/text()")
         if len(t) != 0:
             area = t[0].split(" ")
-            area = area[0] + " km squared"
+            print(country_tuple[0])
+            print(area)
+            area = ''.join(x for x in area[0] if x.isdigit() or x == "," or x == "." or x == "-")
+            print(area)
+            if country_tuple[0]=="Channel Islands":
+                area = "198"
             Area = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(area)))
             g.add((Area, area_of, Country))
 
@@ -221,3 +227,28 @@ def main():
 
 main()
 
+def questions():
+    q = "select ?pm where {" \
+        f" ?pm <http://en.wikipedia.org/prime_minister_of> <http://example.org/Tonga> . " \
+        "} "
+    g2 = rdflib.Graph()
+    g2.parse("ontology.nt", format='nt')
+    x = g2.query(q)
+    print(list(x))
+    # question = input()
+    # if "Who is the prime minister of" in question:
+    #     country = question[question.index('of')+2:-1]
+    #     country = replace_space(country)
+    #prime_minister("Tonga")
+
+
+
+def prime_minister(country):
+    q = "select ?pm where {" \
+        f" ?pm <http://en.wikipedia.org/prime_minister_of> <http://example.org/Tonga> . " \
+        "} "
+    x = g.query(q)
+    print(list(x))
+
+
+#questions()
