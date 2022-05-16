@@ -37,7 +37,7 @@ def alpha_words(word):
 
 def replace_space(name):
     name = name.replace(" ", "_")
-    name = name.replace("&nbsp","_")
+    name = name.replace("&nbsp", "_")
     return name
 
 
@@ -58,10 +58,11 @@ def initiate_url_dict():
     add_urls("Channel Islands", "/wiki/Channel_Islands", countries_url_dict)
     add_urls("Western Sahara", "/wiki/Western_Sahara", countries_url_dict)
     add_urls("Afghanistan", "/wiki/Afghanistan", countries_url_dict)
+    print("Countries: "+str(cnt))
 
 
 def ie_countries():
-    cnt = 0
+    cnt_c = cnt_a = cnt_p = cnt_g = cnt_pr = cnt_pm = 0
     for country_tuple in countries_url_dict.items():
         url = country_tuple[1]
         Country = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(country_tuple[0])))
@@ -73,20 +74,22 @@ def ie_countries():
         if len(t) != 0 and t[0] != "de jure" and t[0] != "[note_1]":
             Capital = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0])))
             g.add((Capital, capital_of, Country))
+            cnt_c += 1
 
         # getting area
         t = doc.xpath(
             "//table[contains(@class,'infobox')]//tr[contains(th//text(),'Area')]/following-sibling::tr/td/text()")
         if len(t) != 0:
             area = t[0].split(" ")
-            print(country_tuple[0])
-            print(area)
+            #print(country_tuple[0])
+            #print(area)
             area = ''.join(x for x in area[0] if x.isdigit() or x == "," or x == "." or x == "-")
-            print(area)
-            if country_tuple[0]=="Channel Islands":
+            #print(area)
+            if country_tuple[0] == "Channel Islands":
                 area = "198"
             Area = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(area)))
             g.add((Area, area_of, Country))
+            cnt_a+=1
 
         # getting government form
         gov = doc.xpath(
@@ -94,6 +97,7 @@ def ie_countries():
             "'Government')]/td//a")
         lst = []
         if len(gov) != 0:
+            cnt_g+=1
             for t in gov:
                 form = t.text
                 link = f"{prefix}{t.attrib['href']}"
@@ -107,64 +111,58 @@ def ie_countries():
                     # r = requests.get(link)
                     # doc_2 = lxml.html.fromstring(r.content)
                     title = link.split("/")
-                    form=title[-1]
+                    form = title[-1]
                     if "#" in form:
                         title = form.split("#")
                         form = title[0]
                     Government = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(form)))
                     g.add((Government, government_form_of, Country))
                     lst.append(form)
-            #print(country_tuple[0]+": "+str(lst))
+            # print(country_tuple[0]+": "+str(lst))
 
-
-        #getting population
+        # getting population
         t = doc.xpath(
             "/html/body/div[3]/div[3]/div[5]/div[1]/table[contains(@class,'infobox')]//tr[contains(th//text(), "
             "'Population')]/following-sibling::tr/td//text()")
         if len(t) != 0:
             pop = t[0]
-            if country_tuple[0]== "Russia" or country_tuple[0]== "Dominican Republic":
+            if country_tuple[0] == "Russia" or country_tuple[0] == "Dominican Republic":
                 pop = t[1]
                 pop = ''.join(x for x in pop if x.isdigit() or x == ",")
-            elif country_tuple[0]=="Channel Islands":
+            elif country_tuple[0] == "Channel Islands":
                 pop = "170,499"
-            elif country_tuple[0]!= "Eritrea":
+            elif country_tuple[0] != "Eritrea":
                 lst = pop.split(" ")
                 for y in lst:
                     pop = y
                     if "," in y:
                         break
-                pop = pop.replace(".",",")
+                pop = pop.replace(".", ",")
                 pop = ''.join(x for x in pop if x.isdigit() or x == ",")
             Population = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(pop)))
             # print(country_tuple[0] +" :" + pop)
-            # cnt+=1
+            cnt_p+=1
             g.add((Population, population_of, Country))
 
-
-        #getting president
-        t = doc.xpath('//table[contains(@class, "infobox")]/tbody//tr[th//text()="President"]/td/a')
+        # getting president
+        t = doc.xpath('//table[contains(@class, "infobox")]/tbody//tr[th//text()="President"]/td//a')
         if len(t) != 0:
-            #cnt+=1
+            cnt_pr+=1
             President = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
-            add_urls(t[0].text,t[0].attrib['href'],people_url_dict)
+            add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
             g.add((President, president_of, Country))
 
-
-
-
-        #getting prime misiter
-        t = doc.xpath('//table[contains(@class, "infobox")]/tbody//tr[th//text()="Prime Minister"]/td/a')
+        # getting prime misiter (142)
+        t = doc.xpath('//table[contains(@class, "infobox")]/tbody//tr[th//text()="Prime Minister"]/td//a')
         if len(t) != 0:
-            cnt+=1
+            cnt_pm += 1
             Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
-            add_urls(t[0].text,t[0].attrib['href'],people_url_dict)
-            #print(country_tuple[0] + ": "+t[0].text)
+            add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
+            # print(country_tuple[0] + ": "+t[0].text)
             g.add((Prime, prime_minister_of, Country))
 
+    print("capitals: "+str(cnt_c)+", area: "+str(cnt_a)+", population: "+str(cnt_p)+" ,gov form: "+str(cnt_g)+ " ,president: "+str(cnt_pr)+" ,prime minister: "+str(cnt_pm))
 
-
-    #print(cnt)
 
 def ie_people():
     for person_tuple in people_url_dict.items():
@@ -172,14 +170,15 @@ def ie_people():
         person = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(person_tuple[0])))
         r = requests.get(url)
         doc = lxml.html.fromstring(r.content)
-        #get birth date
-        temp = doc.xpath('//table[contains(@class, "infobox")]/tbody/tr[th//text()="Born"]//span[@class="bday"]//text()')
-        bday= " "
+        # get birth date
+        temp = doc.xpath(
+            '//table[contains(@class, "infobox")]/tbody/tr[th//text()="Born"]//span[@class="bday"]//text()')
+        bday = " "
         if len(temp) != 0:
             bday = temp[0]
-            if temp[0]==' ' and len(temp) > 1:
+            if temp[0] == ' ' and len(temp) > 1:
                 bday = temp[1]
-            if bday!=' ' or bday !='':
+            if bday != ' ' or bday != '':
                 date = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(temp[0])))
                 g.add((person, bday_is, date))
         place = doc.xpath('//table[contains(@class, "infobox")]/tbody/tr[th//text()="Born"]/td//text()')
@@ -189,31 +188,32 @@ def ie_people():
         temp = ''
         for i in range(len(arr)):
             temp = arr[-1]
-            if temp[-1]==')':
+            if temp[-1] == ')':
                 for j in range(len(arr)):
                     if ('(') in arr[-1]:
-                        arr=arr[:-1]
+                        arr = arr[:-1]
                         break
                     arr = arr[:-1]
                 continue
-            if temp[-1]==']':
+            if temp[-1] == ']':
                 for j in range(len(arr)):
                     if ('[') in arr[-1]:
                         arr = arr[:-1]
                         break
                     arr = arr[:-1]
                 continue
-            if temp[-1]==' ':
+            if temp[-1] == ' ':
                 arr = arr[:-1]
                 continue
             break
-        if len(temp)==0 or has_numbers(temp):
+        if len(temp) == 0 or has_numbers(temp):
             continue
         temp = temp.split(",")
         temp = temp[-1].lstrip()
         country = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(temp)))
-        g.add((person,born_in,country))
-        print(person_tuple[0] + ": " + bday +" <-> "+ temp)
+        g.add((person, born_in, country))
+        #print(person_tuple[0] + ": " + bday + " <-> " + temp)
+
 
 def has_numbers(inputString):
     return any(char.isdigit() for char in inputString)
@@ -225,30 +225,77 @@ def main():
     ie_people()
     g.serialize("ontology.nt", format="nt", errors="ignore")
 
-main()
 
-def questions():
-    q = "select ?pm where {" \
-        f" ?pm <http://en.wikipedia.org/prime_minister_of> <http://example.org/Tonga> . " \
-        "} "
+#main()
+
+
+def question():
     g2 = rdflib.Graph()
     g2.parse("ontology.nt", format='nt')
+    qs = input()
+    qs = " ".join(qs.split())
+    # q2
+    if "Who is the prime minister of" in qs:
+        country = qs[29:-1]
+        country = replace_space(country)
+        q = questions(2, country)
+    # q4
+    elif "What is the area of" in qs:
+        country = qs[20:-1]
+        country = replace_space(country)
+        q = questions(4, country)
+    elif "What is the capital of" in qs:
+        country = qs[23:-1]
+        country = replace_space(country)
+        q = questions(6, country)
+    elif "Where was the president of" in qs:
+        country = qs[27:-6]
+        country = replace_space(country)
+        q = questions(8, country)
+    elif "Where was the prime minister of" in qs:
+        country = qs[32:-6]
+        country = replace_space(country)
+        q = questions(10, country)
+    elif "How many" in qs and "are also" in qs:
+        i = qs.index("are also")
+        gov_form_1 = qs[9:i - 1]
+        gov_form_1 = replace_space(gov_form_1)
+        gov_form_2 = qs[i + 9:-1]
+        gov_form_2 = replace_space(gov_form_2)
+        q = questions(12, gov_form_1, gov_form_2)
+    elif "How many presidents were born in" in qs:
+        i = qs.index("in")
+        country = qs[i + 3:-1]
+        country = replace_space(country)
+        q = questions(14, country)
     x = g2.query(q)
-    print(list(x))
-    # question = input()
-    # if "Who is the prime minister of" in question:
-    #     country = question[question.index('of')+2:-1]
-    #     country = replace_space(country)
-    #prime_minister("Tonga")
+    print(list(x)[0][0])
 
 
+def questions(number, pram1, pram2=""):
+    if number == 2:
+        q = "select ?pm where { ?pm <http://example.org/prime_minister_of> <http://example.org/" + pram1 + "> . } "
+    if number == 4:
+        q = "select ?a where { ?a <http://example.org/area_of> <http://example.org/" + pram1 + "> . } "
+    if number == 6:
+        q = "select ?c where { ?c <http://example.org/capital_of> <http://example.org/" + pram1 + "> . } "
+    if number == 8:
+        q = "select ?bp where { ?p <http://example.org/president_of> <http://example.org/" + pram1 + "> ." \
+                                                                                                     "?p <http://example.org/born_in> ?bp .} "
+    if number == 10:
+        q = "select ?bp where { ?p <http://example.org/prime_minister_of> <http://example.org/" + pram1 + "> ." \
+                                                                                                          " ?p <http://example.org/born_in> ?bp .} "
+    if number == 12:
+        q = "select (COUNT(*) AS ?count)" \
+            "where{<http://example.org/" + pram1 + "> <http://example.org/government_form_of> ?c ." \
+                                                   "<http://example.org/" + pram2 + "> <http://example.org/government_form_of> ?c ." \
+                                                                                    "}"
+    if number == 14:
+        q = "select (COUNT(*) AS ?count) " \
+            "where {?p <" + prefix + "/born_in> <" + prefix + "/" + pram1 + ">." \
+                                                                            "?p <" + prefix + "/predident_of> ?c." \
+                                                                                              "}"
 
-def prime_minister(country):
-    q = "select ?pm where {" \
-        f" ?pm <http://en.wikipedia.org/prime_minister_of> <http://example.org/Tonga> . " \
-        "} "
-    x = g.query(q)
-    print(list(x))
+    return q
 
-
-#questions()
+question()
