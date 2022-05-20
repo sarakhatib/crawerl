@@ -235,61 +235,52 @@ def question():
     g2.parse("ontology.nt", format='nt')
     qs = input()
     qs = " ".join(qs.split())
+    pram2 = ""
     # q1
     if "Who is the president of" in qs:
-        country = question[24:-1]
-        country = replace_space(country)
-        q = questions(1, country)
+        pram1 = replace_space(qs[24:-1])
+        number = 1
     # q2
     elif "Who is the prime minister of" in qs:
-        country = qs[29:-1]
-        country = replace_space(country)
-        q = questions(2, country)
+        pram1 = replace_space(qs[29:-1])
+        number = 2
     # q3
     elif "What is the population of" in qs:
-        country = question[26:-1]
-        country = replace_space(country)
-        q = questions(3, country)
+        pram1 = replace_space(question[26:-1])
+        number = 3
     # q4
     elif "What is the area of" in qs:
-        country = qs[20:-1]
-        country = replace_space(country)
-        q = questions(4, country)
+        pram1 = replace_space(qs[20:-1])
+        number = 4
     # q5
-    elif "What is the form of government in" in qs:  # q5
-        country = question[34:]
-        country = replace_space(country)
-        q = questions(5, country)
+    elif "What is the form of government in" in qs:
+        pram1 = replace_space(question[34:-1])
+        number = 5
     # q6
     elif "What is the capital of" in qs:
-        country = qs[23:-1]
-        country = replace_space(country)
-        q = questions(6, country)
+        pram1 = replace_space(qs[23:-1])
+        number = 6
     # q7
     elif "When was the president of" in qs:
-        country = qs[26:-6]
-        country = replace_space(country)
-        q = questions(7, country)
+        pram1 = replace_space(qs[26:-6])
+        number = 7
     # q8
     elif "Where was the president of" in qs:
-        country = qs[27:-6]
-        country = replace_space(country)
-        q = questions(8, country)
+        pram1 = replace_space(qs[27:-6])
+        number = 8
     # q9
     elif "When was the prime minister of" in qs:
-        country = qs[31:-6]
-        country = replace_space(country)
-        q = questions(9, country)
+        pram1 = replace_space(qs[31:-6])
+        number = 9
     # q10
     elif "Where was the prime minister of" in qs:
-        country = qs[32:-6]
-        country = replace_space(country)
-        q = questions(10, country)
+        pram1 = replace_space(qs[32:-6])
+        number = 10
     # q11
     elif "Who is" in qs:
-        name = qs[7:-1]
-        name = replace_space(name)
-        q = questions(11, name)
+        pram1 = replace_space(qs[7:-1])
+        number = 11
+        q = query(number, pram1)
         x1 = g2.query(q[0])
         if len(list(x1)) == 0:
             q = q[1]
@@ -298,28 +289,25 @@ def question():
     # q12
     elif "How many" in qs and "are also" in qs:
         i = qs.index("are also")
-        gov_form_1 = qs[9:i - 1]
-        gov_form_1 = replace_space(gov_form_1)
-        gov_form_2 = qs[i + 9:-1]
-        gov_form_2 = replace_space(gov_form_2)
-        q = questions(12, gov_form_1, gov_form_2)
+        pram1 = replace_space(qs[9:i - 1])
+        pram2 = replace_space(qs[i + 9:-1])
+        number = 12
     # q13
     elif "List all countries whose capital name contains the string" in qs:
         i = qs.index("string")
-        st = qs[1 + 7:-1]
-        st = replace_space(st)
-        q = questions(13, st)
+        pram1 = replace_space(qs[1 + 7:-1])
+        number = 13
     # q14
     elif "How many presidents were born in" in qs:
         i = qs.index("in")
-        country = qs[i + 3:-1]
-        country = replace_space(country)
-        q = questions(14, country)
+        pram1 = replace_space(qs[i + 3:-1])
+        number = 14
+    query(number, pram1, pram2)
     x = g2.query(q)
     print(list(x)[0][0])
 
 
-def questions(number, pram1, pram2=""):
+def query(number, pram1, pram2=""):
     if number == 1:
         q = "select ?pm where { ?pm <http://example.org/president_of> <http://example.org/" + pram1 + ">.} "
     if number == 2:
