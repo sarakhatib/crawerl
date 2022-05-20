@@ -70,9 +70,10 @@ def ie_countries():
         doc = lxml.html.fromstring(r.content)
         # getting capitals
         t = doc.xpath("/html/body/div[3]/div[3]/div[5]/div[1]/table[contains(@class,'infobox')]//tr[contains(th/text("
-                      "),'Capital')]//a/text()")
-        if len(t) != 0 and t[0] != "de jure" and t[0] != "[note_1]":
-            Capital = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0])))
+                      "),'Capital')]//a")
+        if len(t) != 0 and t[0].text != "de jure" and t[0].text != "[note_1]":
+            name = t[0].attrib['href'].split("/")
+            Capital = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name[-1])))
             g.add((Capital, capital_of, Country))
             cnt_c += 1
 
@@ -152,14 +153,21 @@ def ie_countries():
             add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
             g.add((President, president_of, Country))
 
-        # getting prime misiter (142)
+        # getting prime misiter
         t = doc.xpath('//table[contains(@class, "infobox")]/tbody//tr[th//text()="Prime Minister"]/td//a')
         if len(t) != 0:
             cnt_pm += 1
             Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
             add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
-            # print(country_tuple[0] + ": "+t[0].text)
+            print(country_tuple[0] + ": "+t[0].text)
             g.add((Prime, prime_minister_of, Country))
+        elif country_tuple[0]== "United Arab Emirates":
+            t = doc.xpath('//*[@id="mw-content-text"]/div[1]/table[1]/tbody/tr[15]/td/a')
+            Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
+            add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
+            print(country_tuple[0] + ": " + t[0].text)
+            g.add((Prime, prime_minister_of, Country))
+
 
     print("capitals: " + str(cnt_c) + ", area: " + str(cnt_a) + ", population: " + str(cnt_p) + " ,gov form: " + str(
         cnt_g) + " ,president: " + str(cnt_pr) + " ,prime minister: " + str(cnt_pm))
@@ -227,7 +235,7 @@ def main():
     g.serialize("ontology.nt", format="nt", errors="ignore")
 
 
-# main()
+#main()
 
 
 def question():
@@ -308,7 +316,6 @@ def question():
     x = list(x)
     for line in x:
         print(line[0])
-    #print(list(x)[0][0])
 
 
 def query(number, pram1, pram2=""):
@@ -354,7 +361,6 @@ def query(number, pram1, pram2=""):
             "where {?p <" + prefix + "/born_in> <" + prefix + "/" + pram1 + ">." \
                                                                             "?p <" + prefix + "/predident_of> ?c." \
                                                                                               "}"
-
     return q
 
 
