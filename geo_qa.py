@@ -58,7 +58,7 @@ def initiate_url_dict():
     add_urls("Channel Islands", "/wiki/Channel_Islands", countries_url_dict)
     add_urls("Western Sahara", "/wiki/Western_Sahara", countries_url_dict)
     add_urls("Afghanistan", "/wiki/Afghanistan", countries_url_dict)
-    print("Countries: "+str(cnt))
+    print("Countries: " + str(cnt))
 
 
 def ie_countries():
@@ -81,15 +81,15 @@ def ie_countries():
             "//table[contains(@class,'infobox')]//tr[contains(th//text(),'Area')]/following-sibling::tr/td/text()")
         if len(t) != 0:
             area = t[0].split(" ")
-            #print(country_tuple[0])
-            #print(area)
+            # print(country_tuple[0])
+            # print(area)
             area = ''.join(x for x in area[0] if x.isdigit() or x == "," or x == "." or x == "-")
-            #print(area)
+            # print(area)
             if country_tuple[0] == "Channel Islands":
                 area = "198"
             Area = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(area)))
             g.add((Area, area_of, Country))
-            cnt_a+=1
+            cnt_a += 1
 
         # getting government form
         gov = doc.xpath(
@@ -97,7 +97,7 @@ def ie_countries():
             "'Government')]/td//a")
         lst = []
         if len(gov) != 0:
-            cnt_g+=1
+            cnt_g += 1
             for t in gov:
                 form = t.text
                 link = f"{prefix}{t.attrib['href']}"
@@ -141,13 +141,13 @@ def ie_countries():
                 pop = ''.join(x for x in pop if x.isdigit() or x == ",")
             Population = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(pop)))
             # print(country_tuple[0] +" :" + pop)
-            cnt_p+=1
+            cnt_p += 1
             g.add((Population, population_of, Country))
 
         # getting president
         t = doc.xpath('//table[contains(@class, "infobox")]/tbody//tr[th//text()="President"]/td//a')
         if len(t) != 0:
-            cnt_pr+=1
+            cnt_pr += 1
             President = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
             add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
             g.add((President, president_of, Country))
@@ -161,7 +161,8 @@ def ie_countries():
             # print(country_tuple[0] + ": "+t[0].text)
             g.add((Prime, prime_minister_of, Country))
 
-    print("capitals: "+str(cnt_c)+", area: "+str(cnt_a)+", population: "+str(cnt_p)+" ,gov form: "+str(cnt_g)+ " ,president: "+str(cnt_pr)+" ,prime minister: "+str(cnt_pm))
+    print("capitals: " + str(cnt_c) + ", area: " + str(cnt_a) + ", population: " + str(cnt_p) + " ,gov form: " + str(
+        cnt_g) + " ,president: " + str(cnt_pr) + " ,prime minister: " + str(cnt_pm))
 
 
 def ie_people():
@@ -212,7 +213,7 @@ def ie_people():
         temp = temp[-1].lstrip()
         country = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(temp)))
         g.add((person, born_in, country))
-        #print(person_tuple[0] + ": " + bday + " <-> " + temp)
+        # print(person_tuple[0] + ": " + bday + " <-> " + temp)
 
 
 def has_numbers(inputString):
@@ -226,7 +227,7 @@ def main():
     g.serialize("ontology.nt", format="nt", errors="ignore")
 
 
-#main()
+# main()
 
 
 def question():
@@ -234,28 +235,67 @@ def question():
     g2.parse("ontology.nt", format='nt')
     qs = input()
     qs = " ".join(qs.split())
+    # q1
+    if "Who is the president of" in qs:
+        country = question[24:-1]
+        country = replace_space(country)
+        q = questions(1, country)
     # q2
-    if "Who is the prime minister of" in qs:
+    elif "Who is the prime minister of" in qs:
         country = qs[29:-1]
         country = replace_space(country)
         q = questions(2, country)
+    # q3
+    elif "What is the population of" in qs:
+        country = question[26:-1]
+        country = replace_space(country)
+        q = questions(3, country)
     # q4
     elif "What is the area of" in qs:
         country = qs[20:-1]
         country = replace_space(country)
         q = questions(4, country)
+    # q5
+    elif "What is the form of government in" in qs:  # q5
+        country = question[34:]
+        country = replace_space(country)
+        q = questions(5, country)
+    # q6
     elif "What is the capital of" in qs:
         country = qs[23:-1]
         country = replace_space(country)
         q = questions(6, country)
+    # q7
+    elif "When was the president of" in qs:
+        country = qs[26:-6]
+        country = replace_space(country)
+        q = questions(7, country)
+    # q8
     elif "Where was the president of" in qs:
         country = qs[27:-6]
         country = replace_space(country)
         q = questions(8, country)
+    # q9
+    elif "When was the prime minister of" in qs:
+        country = qs[31:-6]
+        country = replace_space(country)
+        q = questions(9, country)
+    # q10
     elif "Where was the prime minister of" in qs:
         country = qs[32:-6]
         country = replace_space(country)
         q = questions(10, country)
+    # q11
+    elif "Who is" in qs:
+        name = qs[7:-1]
+        name = replace_space(name)
+        q = questions(11, name)
+        x1 = g2.query(q[0])
+        if len(list(x1)) == 0:
+            q = q[1]
+        else:
+            q = q[0]
+    # q12
     elif "How many" in qs and "are also" in qs:
         i = qs.index("are also")
         gov_form_1 = qs[9:i - 1]
@@ -263,6 +303,13 @@ def question():
         gov_form_2 = qs[i + 9:-1]
         gov_form_2 = replace_space(gov_form_2)
         q = questions(12, gov_form_1, gov_form_2)
+    # q13
+    elif "List all countries whose capital name contains the string" in qs:
+        i = qs.index("string")
+        st = qs[1 + 7:-1]
+        st = replace_space(st)
+        q = questions(13, st)
+    # q14
     elif "How many presidents were born in" in qs:
         i = qs.index("in")
         country = qs[i + 3:-1]
@@ -273,23 +320,43 @@ def question():
 
 
 def questions(number, pram1, pram2=""):
+    if number == 1:
+        q = "select ?pm where { ?pm <http://example.org/president_of> <http://example.org/" + pram1 + ">.} "
     if number == 2:
         q = "select ?pm where { ?pm <http://example.org/prime_minister_of> <http://example.org/" + pram1 + "> . } "
+    if number == 3:
+        q = "select ?pm where { ?pm <http://example.org/population_of> <http://example.org/" + pram1 + ">.} "
     if number == 4:
         q = "select ?a where { ?a <http://example.org/area_of> <http://example.org/" + pram1 + "> . } "
+    if number == 5:
+        q = "select ?pm where { ?pm <http://example.org/government_form_of> <http://example.org/" + pram1 + ">.} "
     if number == 6:
         q = "select ?c where { ?c <http://example.org/capital_of> <http://example.org/" + pram1 + "> . } "
+    if number == 7:
+        q = "select ?b where { ?p <http://example.org/president_of> <http://example.org/" + pram1 + ">. " \
+                                                                                                    "?p <http://example.org/bday> ?b . }"
     if number == 8:
         q = "select ?bp where { ?p <http://example.org/president_of> <http://example.org/" + pram1 + "> ." \
                                                                                                      "?p <http://example.org/born_in> ?bp .} "
+    if number == 9:
+        q = "select ?b where { ?p <http://example.org/prime_minister_of> <http://example.org/" + pram1 + ">. " \
+                                                                                                         "?p <http://example.org/bday> ?b . }"
     if number == 10:
         q = "select ?bp where { ?p <http://example.org/prime_minister_of> <http://example.org/" + pram1 + "> ." \
                                                                                                           " ?p <http://example.org/born_in> ?bp .} "
+    if number == 11:
+        q1 = "select ?c where { <http://example.org/" + pram1 + "> <http://example.org/prime_minister_of> ?c . }"
+        q2 = "select ?c where { <http://example.org/" + pram1 + "> <http://example.org/president_of> ?c . }"
+        q = [q1, q2]
     if number == 12:
         q = "select (COUNT(*) AS ?count)" \
             "where{<http://example.org/" + pram1 + "> <http://example.org/government_form_of> ?c ." \
                                                    "<http://example.org/" + pram2 + "> <http://example.org/government_form_of> ?c ." \
                                                                                     "}"
+    if number == 13:
+        q = "select ?country where {?capital <http://example.org/capital_of> ?country . " \
+            f'FILTER(CONTAINS(str(?capital), "{pram1}")) .' + "}"
+
     if number == 14:
         q = "select (COUNT(*) AS ?count) " \
             "where {?p <" + prefix + "/born_in> <" + prefix + "/" + pram1 + ">." \
@@ -297,5 +364,6 @@ def questions(number, pram1, pram2=""):
                                                                                               "}"
 
     return q
+
 
 question()
