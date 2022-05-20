@@ -246,7 +246,7 @@ def question():
         number = 2
     # q3
     elif "What is the population of" in qs:
-        pram1 = replace_space(question[26:-1])
+        pram1 = replace_space(qs[26:-1])
         number = 3
     # q4
     elif "What is the area of" in qs:
@@ -254,7 +254,7 @@ def question():
         number = 4
     # q5
     elif "What is the form of government in" in qs:
-        pram1 = replace_space(question[34:-1])
+        pram1 = replace_space(qs[34:-1])
         number = 5
     # q6
     elif "What is the capital of" in qs:
@@ -295,16 +295,20 @@ def question():
     # q13
     elif "List all countries whose capital name contains the string" in qs:
         i = qs.index("string")
-        pram1 = replace_space(qs[1 + 7:-1])
+        pram1 = replace_space(qs[i + 7:])
         number = 13
     # q14
     elif "How many presidents were born in" in qs:
         i = qs.index("in")
         pram1 = replace_space(qs[i + 3:-1])
         number = 14
-    query(number, pram1, pram2)
+    if number !=11 :
+        q = query(number, pram1, pram2)
     x = g2.query(q)
-    print(list(x)[0][0])
+    x = list(x)
+    for line in x:
+        print(line[0])
+    #print(list(x)[0][0])
 
 
 def query(number, pram1, pram2=""):
