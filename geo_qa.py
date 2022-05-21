@@ -354,7 +354,7 @@ def query(number, pram1, pram2=""):
                                                                                     "}"
     if number == 13:
         q = "select ?country where {?capital <http://example.org/capital_of> ?country . " \
-            f'FILTER(CONTAINS(str(?capital), "{pram1}")) .' + "}"
+            f'FILTER(CONTAINS(lcase(str(?capital)), "{pram1}")) .' + "}"
 
     if number == 14:
         q = "select (COUNT(*) AS ?count) " \
