@@ -153,7 +153,7 @@ def ie_countries():
             add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
             g.add((President, president_of, Country))
 
-        # getting prime misiter
+        # getting prime minister
         t = doc.xpath('//table[contains(@class, "infobox")]/tbody//tr[th//text()="Prime Minister"]/td//a')
         if len(t) != 0:
             cnt_pm += 1
@@ -357,8 +357,8 @@ def query(number, pram1, pram2=""):
 
     if number == 14:
         q = "select (COUNT(*) AS ?count) " \
-            "where {?p <" + prefix + "/born_in> <" + prefix + "/" + pram1 + ">." \
-                                                                            "?p <" + prefix + "/predident_of> ?c." \
+            "where {?p <" + prefix_for_ontology + "/born_in> <" + prefix_for_ontology + "/" + pram1 + ">." \
+                                                                            "?p <" + prefix_for_ontology + "/predident_of> ?c." \
                                                                                               "}"
     return q
 
