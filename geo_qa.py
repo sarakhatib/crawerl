@@ -40,6 +40,10 @@ def replace_space(name):
     name = name.replace("&nbsp", "_")
     return name
 
+def prepare_for_print(answer):
+    answer = answer.replace("_"," ")
+    return answer
+
 
 def add_urls(name, url, entity_dict):
     final_url = f"{prefix}{url}"
@@ -243,6 +247,7 @@ def question():
     qs = input()
     qs = " ".join(qs.split())
     pram2 = ""
+    president = True
     # q1
     if "Who is the president of" in qs:
         pram1 = replace_space(qs[24:-1])
@@ -291,6 +296,7 @@ def question():
         x1 = g2.query(q[0])
         if len(list(x1)) == 0:
             q = q[1]
+            president = False
         else:
             q = q[0]
     # q12
@@ -311,10 +317,31 @@ def question():
         number = 14
     if number != 11:
         q = query(number, pram1, pram2)
+    else:
+        x = g2.query(q)
+        x = list(x)
+        if president:
+            print("President of "+ prepare_for_print(x[0][0].split("/")[-1]))
+        else:
+            print("Prime Minister of "+ prepare_for_print(x[0][0].split("/")[-1]))
+        return
+
     x = g2.query(q)
     x = list(x)
-    for line in x:
-        print(line[0])
+    if len(x) == 1:
+        if prefix_for_ontology in x[0][0]:
+            print(prepare_for_print(x[0][0].split("/")[-1]))
+        else:
+            print(x[0][0])
+    else:
+        res = []
+        for i in range(len(x)):
+            res.append( prepare_for_print(x[i][0].split("/")[-1] ))
+        res.sort()
+        st = res[0]
+        for i in range(1,len(res)):
+            st += ", " + res[i]
+        print(st)
 
 
 def query(number, pram1, pram2=""):
@@ -357,10 +384,10 @@ def query(number, pram1, pram2=""):
 
     if number == 14:
         q = "select (COUNT(*) AS ?count) " \
-            "where {?p <" + prefix_for_ontology + "/born_in> <" + prefix_for_ontology + "/" + pram1 + ">." \
-                                                                            "?p <" + prefix_for_ontology + "/predident_of> ?c." \
+            "where {?p <" + prefix_for_ontology + "born_in> <" + prefix_for_ontology + pram1 + ">." \
+                                                                            "?p <" + prefix_for_ontology + "predident_of> ?c." \
                                                                                               "}"
     return q
 
 
-# question()
+question()
