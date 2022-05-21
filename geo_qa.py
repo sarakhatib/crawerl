@@ -159,15 +159,14 @@ def ie_countries():
             cnt_pm += 1
             Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
             add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
-            print(country_tuple[0] + ": "+t[0].text)
+            print(country_tuple[0] + ": " + t[0].text)
             g.add((Prime, prime_minister_of, Country))
-        elif country_tuple[0]== "United Arab Emirates":
+        elif country_tuple[0] == "United Arab Emirates":
             t = doc.xpath('//*[@id="mw-content-text"]/div[1]/table[1]/tbody/tr[15]/td/a')
             Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
             add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
             print(country_tuple[0] + ": " + t[0].text)
             g.add((Prime, prime_minister_of, Country))
-
 
     print("capitals: " + str(cnt_c) + ", area: " + str(cnt_a) + ", population: " + str(cnt_p) + " ,gov form: " + str(
         cnt_g) + " ,president: " + str(cnt_pr) + " ,prime minister: " + str(cnt_pm))
@@ -235,7 +234,7 @@ def main():
     g.serialize("ontology.nt", format="nt", errors="ignore")
 
 
-#main()
+# main()
 
 
 def question():
@@ -310,7 +309,7 @@ def question():
         i = qs.index("in")
         pram1 = replace_space(qs[i + 3:-1])
         number = 14
-    if number !=11 :
+    if number != 11:
         q = query(number, pram1, pram2)
     x = g2.query(q)
     x = list(x)
@@ -364,4 +363,4 @@ def query(number, pram1, pram2=""):
     return q
 
 
-question()
+# question()
