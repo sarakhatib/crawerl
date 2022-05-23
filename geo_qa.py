@@ -5,7 +5,6 @@ import sys
 import urllib
 from urllib import parse
 
-
 g = rdflib.Graph()
 prefix = "http://en.wikipedia.org"
 prefix_for_ontology = "http://example.org/"
@@ -71,11 +70,11 @@ def initiate_url_dict():
             name = name[:index - 1]
         name = urllib.parse.unquote(name)
         add_urls(name, t.attrib['href'], countries_url_dict)
-        cnt +=1
+        cnt += 1
     add_urls("Channel Islands", "/wiki/Channel_Islands", countries_url_dict)
     add_urls("Western Sahara", "/wiki/Western_Sahara", countries_url_dict)
     add_urls("Afghanistan", "/wiki/Afghanistan", countries_url_dict)
-    #print("Countries: " + str(cnt+3))
+    # print("Countries: " + str(cnt+3))
 
 
 def ie_countries():
@@ -92,25 +91,26 @@ def ie_countries():
             name = name[-1]
             if name[-1] == ')':
                 index = name.index('(')
-                name = name[:index-1]
+                name = name[:index - 1]
             if name[-1] == ']':
                 index = name.index('[')
-                name = name[:index-1]
-            #print(name)
+                name = name[:index - 1]
+            # print(name)
             name = urllib.parse.unquote(name)
-            #print("fixed: " + country_tuple[0]+ " :"+name)
+            # print("fixed: " + country_tuple[0]+ " :"+name)
             Capital = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name)))
             g.add((Capital, capital_of, Country))
             cnt_c += 1
 
         # getting area
-        t = doc.xpath("//table[contains(@class,'infobox')]//tr[contains(th//text(),'Area')]/following-sibling::tr/td/text()")
+        t = doc.xpath(
+            "//table[contains(@class,'infobox')]//tr[contains(th//text(),'Area')]/following-sibling::tr/td/text()")
         if len(t) != 0:
             area = t[0].split(" ")
             # print(country_tuple[0])
             # print(area)
-            area = ''.join(x for x in area[0] if x.isdigit() or x == "," or x == "." or x == "-")
-            # print(area)
+            area = ''.join(x for x in area[0] if x.isdigit() or x == "," or x == "." or x == "–")
+            print(area)
             if country_tuple[0] == "Channel Islands":
                 area = "198"
             Area = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(area)))
@@ -147,7 +147,8 @@ def ie_countries():
             # print(country_tuple[0]+": "+str(lst))
 
         # getting population
-        t = doc.xpath("//table[contains(@class, 'infobox')]/tbody//tr[contains(th//text(), 'Population')]/following-sibling::tr/td//text()")
+        t = doc.xpath(
+            "//table[contains(@class, 'infobox')]/tbody//tr[contains(th//text(), 'Population')]/following-sibling::tr/td//text()")
         if len(t) != 0:
             pop = t[0]
             if country_tuple[0] == "Russia" or country_tuple[0] == "Dominican Republic":
@@ -175,16 +176,16 @@ def ie_countries():
             President = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name)))
             add_urls(name, "/wiki/Ignazio_Cassis", people_url_dict)
             g.add((President, president_of, Country))
-            cnt_pr+=1
+            cnt_pr += 1
         if len(t) != 0:
             cnt_pr += 1
             name = t[0].attrib['href'].split("/")[-1]
             if name[-1] == ')':
                 index = name.index('(')
-                name = name[:index-1]
+                name = name[:index - 1]
             if name[-1] == ']':
                 index = name.index('[')
-                name = name[:index-1]
+                name = name[:index - 1]
             name = urllib.parse.unquote(name)
             President = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name)))
             add_urls(name, t[0].attrib['href'], people_url_dict)
@@ -202,14 +203,14 @@ def ie_countries():
             name = t[0].attrib['href'].split("/")[-1]
             if name[-1] == ')':
                 index = name.index('(')
-                name = name[:index-1]
+                name = name[:index - 1]
             if name[-1] == ']':
                 index = name.index('[')
-                name = name[:index-1]
+                name = name[:index - 1]
             name = urllib.parse.unquote(name)
             Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name)))
             add_urls(name, t[0].attrib['href'], people_url_dict)
-            #print(country_tuple[0] + ": " + t[0].text + ", after change:"+name)
+            # print(country_tuple[0] + ": " + t[0].text + ", after change:"+name)
             g.add((Prime, prime_minister_of, Country))
         elif country_tuple[0] == "United Arab Emirates":
             t = doc.xpath('//*[@id="mw-content-text"]/div[1]/table[1]/tbody/tr[15]/td/a')
@@ -219,10 +220,10 @@ def ie_countries():
             add_urls(name, t[0].attrib['href'], people_url_dict)
             # print(country_tuple[0] + ": " + t[0].text)
             g.add((Prime, prime_minister_of, Country))
-            cnt_pm +=1
+            cnt_pm += 1
 
-    #print("capitals: " + str(cnt_c) + ", area: " + str(cnt_a) + ", population: " + str(cnt_p) + " ,gov form: " + str(
-     #   cnt_g) + " ,president: " + str(cnt_pr) + " ,prime minister: " + str(cnt_pm))
+    # print("capitals: " + str(cnt_c) + ", area: " + str(cnt_a) + ", population: " + str(cnt_p) + " ,gov form: " + str(
+    #   cnt_g) + " ,president: " + str(cnt_pr) + " ,prime minister: " + str(cnt_pm))
 
 
 def ie_people():
@@ -232,7 +233,8 @@ def ie_people():
         r = requests.get(url)
         doc = lxml.html.fromstring(r.content)
         # get birth date
-        temp = doc.xpath('//table[contains(@class, "infobox")]/tbody/tr[th//text()="Born"]//span[@class="bday"]//text()')
+        temp = doc.xpath(
+            '//table[contains(@class, "infobox")]/tbody/tr[th//text()="Born"]//span[@class="bday"]//text()')
         bday = " "
         if len(temp) != 0:
             bday = temp[0]
@@ -251,6 +253,7 @@ def ie_people():
         country = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(temp)))
         g.add((person, born_in, country))
         # print(person_tuple[0] + ": " + bday + " <-> " + temp)
+
 
 def get_right_url(arr):
     temp = ''
@@ -366,6 +369,35 @@ def question():
         i = qs.index("in")
         pram1 = replace_space(qs[i + 3:-1])
         number = 14
+    # q15
+    elif "Is" in qs and "bigger than" in qs:
+        i = qs.index("bigger")
+        pram1 = replace_space(qs[3:i-1])
+        pram2 = replace_space(qs[i + 12:-1])
+        q1 = query(4, pram1, "")
+        q2 = query(4, pram2, "")
+        x = g2.query(q1)
+        x = list(x)
+        area_1 = prepare_for_print(x[0][0].split("/")[-1])
+        x = g2.query(q2)
+        x = list(x)
+        area_2 = prepare_for_print(x[0][0].split("/")[-1])
+        if pram1 == "Israel":
+            area_1 = 20770
+            area_2 = area_2.replace(",", "")
+        elif pram2 == "Israel":
+            area_2 = 20770
+            area_1 = area_1.replace(",", "")
+        else:
+            area_1 = area_1.replace(",","")
+            area_2 = area_2.replace(",","")
+        area_1 = int(area_1)
+        area_2 = int(area_2)
+        if area_1 > area_2:
+            print("Yes, " + pram1 + " is bigger than " + pram2)
+        else:
+            print("No, " + pram2 + " is bigger than " + pram1)
+        return 0
     if number != 11:
         q = query(number, pram1, pram2)
     else:
@@ -376,7 +408,6 @@ def question():
         else:
             print("Prime Minister of " + prepare_for_print(x[0][0].split("/")[-1]))
         return
-
     x = g2.query(q)
     x = list(x)
     if len(x) == 1:
@@ -396,7 +427,7 @@ def question():
         for i in range(1, len(res)):
             st += ", " + res[i]
         print(st)
-
+    return 0
 
 def query(number, pram1, pram2=""):
     if number == 1:
@@ -453,5 +484,6 @@ def main():
     else:
         print("unknown command, please check again")
     return 0
+
 
 main()
