@@ -1,6 +1,8 @@
 import lxml.html
 import rdflib
 import requests
+import sys
+
 
 g = rdflib.Graph()
 prefix = "http://en.wikipedia.org"
@@ -40,8 +42,9 @@ def replace_space(name):
     name = name.replace("&nbsp", "_")
     return name
 
+
 def prepare_for_print(answer):
-    answer = answer.replace("_"," ")
+    answer = answer.replace("_", " ")
     return answer
 
 
@@ -57,12 +60,22 @@ def initiate_url_dict():
     doc = lxml.html.fromstring(r.content)
     cnt = 0
     for t in doc.xpath("/html/body/div[3]/div[3]/div[5]/div[1]/table/tbody//td[1]//span/a"):
-        add_urls(t.text, t.attrib['href'], countries_url_dict)
-        cnt += 1
+        name = str(t.attrib['href']).split("/")[-1].replace("_", " ")
+        if "Georgia" in name:
+            add_urls("Georgia", t.attrib['href'], countries_url_dict)
+        elif t.text == "Réunion":
+            add_urls("Réunion", t.attrib['href'], countries_url_dict)
+        elif t.text == "São Tomé and Príncipe":
+            add_urls("São Tomé and Príncipe", t.attrib['href'], countries_url_dict)
+        elif t.text == "Curaçao":
+            add_urls("Curaçao", t.attrib['href'], countries_url_dict)
+        else:
+            add_urls(name, t.attrib['href'], countries_url_dict)
+        cnt +=1
     add_urls("Channel Islands", "/wiki/Channel_Islands", countries_url_dict)
     add_urls("Western Sahara", "/wiki/Western_Sahara", countries_url_dict)
     add_urls("Afghanistan", "/wiki/Afghanistan", countries_url_dict)
-    print("Countries: " + str(cnt))
+    print("Countries: " + str(cnt+3))
 
 
 def ie_countries():
@@ -120,6 +133,8 @@ def ie_countries():
                     if "#" in form:
                         title = form.split("#")
                         form = title[0]
+                    if form == 'Marxism%E2%80%93Leninism':
+                        form = 'Marxism_Leninism'
                     Government = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(form)))
                     g.add((Government, government_form_of, Country))
                     lst.append(form)
@@ -151,6 +166,12 @@ def ie_countries():
 
         # getting president
         t = doc.xpath('//table[contains(@class, "infobox")]/tbody//tr[th//text()="President"]/td//a')
+        if country_tuple[0] == "Switzerland":
+            name = "Ignazio Cassis"
+            President = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name)))
+            add_urls(name, "/wiki/Ignazio_Cassis", people_url_dict)
+            g.add((President, president_of, Country))
+            cnt_pr+=1
         if len(t) != 0:
             cnt_pr += 1
             President = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
@@ -169,11 +190,12 @@ def ie_countries():
             t = doc.xpath('//*[@id="mw-content-text"]/div[1]/table[1]/tbody/tr[15]/td/a')
             Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
             add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
-            print(country_tuple[0] + ": " + t[0].text)
+            # print(country_tuple[0] + ": " + t[0].text)
             g.add((Prime, prime_minister_of, Country))
+            cnt_pm +=1
 
-    print("capitals: " + str(cnt_c) + ", area: " + str(cnt_a) + ", population: " + str(cnt_p) + " ,gov form: " + str(
-        cnt_g) + " ,president: " + str(cnt_pr) + " ,prime minister: " + str(cnt_pm))
+    # print("capitals: " + str(cnt_c) + ", area: " + str(cnt_a) + ", population: " + str(cnt_p) + " ,gov form: " + str(
+    #    cnt_g) + " ,president: " + str(cnt_pr) + " ,prime minister: " + str(cnt_pm))
 
 
 def ie_people():
@@ -231,20 +253,17 @@ def has_numbers(inputString):
     return any(char.isdigit() for char in inputString)
 
 
-def main():
+def create():
     initiate_url_dict()
     ie_countries()
     ie_people()
     g.serialize("ontology.nt", format="nt", errors="ignore")
 
 
-# main()
-
-
 def question():
     g2 = rdflib.Graph()
     g2.parse("ontology.nt", format='nt')
-    qs = input()
+    qs = str(sys.argv[2])
     qs = " ".join(qs.split())
     pram2 = ""
     president = True
@@ -296,9 +315,9 @@ def question():
         x1 = g2.query(q[0])
         if len(list(x1)) == 0:
             q = q[1]
-            president = False
         else:
             q = q[0]
+            president = False
     # q12
     elif "How many" in qs and "are also" in qs:
         i = qs.index("are also")
@@ -321,25 +340,28 @@ def question():
         x = g2.query(q)
         x = list(x)
         if president:
-            print("President of "+ prepare_for_print(x[0][0].split("/")[-1]))
+            print("President of " + prepare_for_print(x[0][0].split("/")[-1]))
         else:
-            print("Prime Minister of "+ prepare_for_print(x[0][0].split("/")[-1]))
+            print("Prime Minister of " + prepare_for_print(x[0][0].split("/")[-1]))
         return
 
     x = g2.query(q)
     x = list(x)
     if len(x) == 1:
         if prefix_for_ontology in x[0][0]:
-            print(prepare_for_print(x[0][0].split("/")[-1]))
+            if number != 4:
+                print(prepare_for_print(x[0][0].split("/")[-1]))
+            else:
+                print(prepare_for_print(x[0][0].split("/")[-1]) + " km squared")
         else:
             print(x[0][0])
     else:
         res = []
         for i in range(len(x)):
-            res.append( prepare_for_print(x[i][0].split("/")[-1] ))
+            res.append(prepare_for_print(x[i][0].split("/")[-1]))
         res.sort()
         st = res[0]
-        for i in range(1,len(res)):
+        for i in range(1, len(res)):
             st += ", " + res[i]
         print(st)
 
@@ -385,8 +407,8 @@ def query(number, pram1, pram2=""):
     if number == 14:
         q = "select (COUNT(*) AS ?count) " \
             "where {?p <" + prefix_for_ontology + "born_in> <" + prefix_for_ontology + pram1 + ">." \
-                                                                            "?p <" + prefix_for_ontology + "predident_of> ?c." \
-                                                                                              "}"
+                                                                                               "?p <" + prefix_for_ontology + "president_of> ?c." \
+                                                                                                                              "}"
     return q
 
 
