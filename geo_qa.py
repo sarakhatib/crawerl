@@ -86,8 +86,7 @@ def ie_countries():
         r = requests.get(url)
         doc = lxml.html.fromstring(r.content)
         # getting capitals
-        t = doc.xpath("/html/body/div[3]/div[3]/div[5]/div[1]/table[contains(@class,'infobox')]//tr[contains(th/text("
-                      "),'Capital')]//a")
+        t = doc.xpath("//table[contains(@class, 'infobox')]/tbody//tr[contains(th/text(),'Capital')]//a")
         if len(t) != 0 and t[0].text != "de jure" and t[0].text != "[note_1]":
             name = t[0].attrib['href'].split("/")
             Capital = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name[-1])))
@@ -95,8 +94,7 @@ def ie_countries():
             cnt_c += 1
 
         # getting area
-        t = doc.xpath(
-            "//table[contains(@class,'infobox')]//tr[contains(th//text(),'Area')]/following-sibling::tr/td/text()")
+        t = doc.xpath("//table[contains(@class,'infobox')]//tr[contains(th//text(),'Area')]/following-sibling::tr/td/text()")
         if len(t) != 0:
             area = t[0].split(" ")
             # print(country_tuple[0])
@@ -110,9 +108,7 @@ def ie_countries():
             cnt_a += 1
 
         # getting government form
-        gov = doc.xpath(
-            "/html/body/div[3]/div[3]/div[5]/div[1]/table[contains(@class,'infobox')]//tr[contains(th//text(), "
-            "'Government')]/td//a")
+        gov = doc.xpath("//table[contains(@class, 'infobox')]/tbody//tr[contains(th//text(), 'Government')]/td//a")
         lst = []
         if len(gov) != 0:
             cnt_g += 1
@@ -141,9 +137,7 @@ def ie_countries():
             # print(country_tuple[0]+": "+str(lst))
 
         # getting population
-        t = doc.xpath(
-            "/html/body/div[3]/div[3]/div[5]/div[1]/table[contains(@class,'infobox')]//tr[contains(th//text(), "
-            "'Population')]/following-sibling::tr/td//text()")
+        t = doc.xpath("//table[contains(@class, 'infobox')]/tbody//tr[contains(th//text(), 'Population')]/following-sibling::tr/td//text()")
         if len(t) != 0:
             pop = t[0]
             if country_tuple[0] == "Russia" or country_tuple[0] == "Dominican Republic":
@@ -205,8 +199,7 @@ def ie_people():
         r = requests.get(url)
         doc = lxml.html.fromstring(r.content)
         # get birth date
-        temp = doc.xpath(
-            '//table[contains(@class, "infobox")]/tbody/tr[th//text()="Born"]//span[@class="bday"]//text()')
+        temp = doc.xpath('//table[contains(@class, "infobox")]/tbody/tr[th//text()="Born"]//span[@class="bday"]//text()')
         bday = " "
         if len(temp) != 0:
             bday = temp[0]
