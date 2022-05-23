@@ -2,6 +2,8 @@ import lxml.html
 import rdflib
 import requests
 import sys
+import urllib
+from urllib import parse
 
 
 g = rdflib.Graph()
@@ -59,23 +61,21 @@ def initiate_url_dict():
     r = requests.get(first_url)
     doc = lxml.html.fromstring(r.content)
     cnt = 0
-    for t in doc.xpath("/html/body/div[3]/div[3]/div[5]/div[1]/table/tbody//td[1]//span/a"):
+    for t in doc.xpath("//table/tbody//td[1]//span/a"):
         name = str(t.attrib['href']).split("/")[-1].replace("_", " ")
-        if "Georgia" in name:
-            add_urls("Georgia", t.attrib['href'], countries_url_dict)
-        elif t.text == "Réunion":
-            add_urls("Réunion", t.attrib['href'], countries_url_dict)
-        elif t.text == "São Tomé and Príncipe":
-            add_urls("São Tomé and Príncipe", t.attrib['href'], countries_url_dict)
-        elif t.text == "Curaçao":
-            add_urls("Curaçao", t.attrib['href'], countries_url_dict)
-        else:
-            add_urls(name, t.attrib['href'], countries_url_dict)
+        if name[-1] == ')':
+            index = name.index('(')
+            name = name[:index - 1]
+        if name[-1] == ']':
+            index = name.index('[')
+            name = name[:index - 1]
+        name = urllib.parse.unquote(name)
+        add_urls(name, t.attrib['href'], countries_url_dict)
         cnt +=1
     add_urls("Channel Islands", "/wiki/Channel_Islands", countries_url_dict)
     add_urls("Western Sahara", "/wiki/Western_Sahara", countries_url_dict)
     add_urls("Afghanistan", "/wiki/Afghanistan", countries_url_dict)
-    print("Countries: " + str(cnt+3))
+    #print("Countries: " + str(cnt+3))
 
 
 def ie_countries():
@@ -87,9 +87,19 @@ def ie_countries():
         doc = lxml.html.fromstring(r.content)
         # getting capitals
         t = doc.xpath("//table[contains(@class, 'infobox')]/tbody//tr[contains(th/text(),'Capital')]//a")
-        if len(t) != 0 and t[0].text != "de jure" and t[0].text != "[note_1]":
+        if len(t) != 0 and t[0].text != "de jure" and "note" not in t[0].text:
             name = t[0].attrib['href'].split("/")
-            Capital = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name[-1])))
+            name = name[-1]
+            if name[-1] == ')':
+                index = name.index('(')
+                name = name[:index-1]
+            if name[-1] == ']':
+                index = name.index('[')
+                name = name[:index-1]
+            #print(name)
+            name = urllib.parse.unquote(name)
+            #print("fixed: " + country_tuple[0]+ " :"+name)
+            Capital = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name)))
             g.add((Capital, capital_of, Country))
             cnt_c += 1
 
@@ -168,28 +178,51 @@ def ie_countries():
             cnt_pr+=1
         if len(t) != 0:
             cnt_pr += 1
-            President = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
-            add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
+            name = t[0].attrib['href'].split("/")[-1]
+            if name[-1] == ')':
+                index = name.index('(')
+                name = name[:index-1]
+            if name[-1] == ']':
+                index = name.index('[')
+                name = name[:index-1]
+            name = urllib.parse.unquote(name)
+            President = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name)))
+            add_urls(name, t[0].attrib['href'], people_url_dict)
             g.add((President, president_of, Country))
 
         # getting prime minister
         t = doc.xpath('//table[contains(@class, "infobox")]/tbody//tr[th//text()="Prime Minister"]/td//a')
-        if len(t) != 0:
+        if country_tuple[0] == "The Bahamas":
+            name = "Philip Davis"
+            Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name)))
+            add_urls(name, t[0].attrib['href'], people_url_dict)
+            g.add((Prime, prime_minister_of, Country))
+        elif len(t) != 0:
             cnt_pm += 1
-            Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
-            add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
-            print(country_tuple[0] + ": " + t[0].text)
+            name = t[0].attrib['href'].split("/")[-1]
+            if name[-1] == ')':
+                index = name.index('(')
+                name = name[:index-1]
+            if name[-1] == ']':
+                index = name.index('[')
+                name = name[:index-1]
+            name = urllib.parse.unquote(name)
+            Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name)))
+            add_urls(name, t[0].attrib['href'], people_url_dict)
+            #print(country_tuple[0] + ": " + t[0].text + ", after change:"+name)
             g.add((Prime, prime_minister_of, Country))
         elif country_tuple[0] == "United Arab Emirates":
             t = doc.xpath('//*[@id="mw-content-text"]/div[1]/table[1]/tbody/tr[15]/td/a')
-            Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(t[0].text)))
-            add_urls(t[0].text, t[0].attrib['href'], people_url_dict)
+            name = t[0].attrib['href'].split("/")[-1]
+            name = urllib.parse.unquote(name)
+            Prime = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(name)))
+            add_urls(name, t[0].attrib['href'], people_url_dict)
             # print(country_tuple[0] + ": " + t[0].text)
             g.add((Prime, prime_minister_of, Country))
             cnt_pm +=1
 
-    # print("capitals: " + str(cnt_c) + ", area: " + str(cnt_a) + ", population: " + str(cnt_p) + " ,gov form: " + str(
-    #    cnt_g) + " ,president: " + str(cnt_pr) + " ,prime minister: " + str(cnt_pm))
+    #print("capitals: " + str(cnt_c) + ", area: " + str(cnt_a) + ", population: " + str(cnt_p) + " ,gov form: " + str(
+     #   cnt_g) + " ,president: " + str(cnt_pr) + " ,prime minister: " + str(cnt_pm))
 
 
 def ie_people():
@@ -212,34 +245,40 @@ def ie_people():
         arr = []
         for p in place:
             arr.append(p)
-        temp = ''
-        for i in range(len(arr)):
-            temp = arr[-1]
-            if temp[-1] == ')':
-                for j in range(len(arr)):
-                    if ('(') in arr[-1]:
-                        arr = arr[:-1]
-                        break
-                    arr = arr[:-1]
-                continue
-            if temp[-1] == ']':
-                for j in range(len(arr)):
-                    if ('[') in arr[-1]:
-                        arr = arr[:-1]
-                        break
-                    arr = arr[:-1]
-                continue
-            if temp[-1] == ' ':
-                arr = arr[:-1]
-                continue
-            break
-        if len(temp) == 0 or has_numbers(temp):
+        temp = get_right_url(arr)
+        if temp == "":
             continue
-        temp = temp.split(",")
-        temp = temp[-1].lstrip()
         country = rdflib.URIRef(concat_prefix_to_entity_or_property(replace_space(temp)))
         g.add((person, born_in, country))
         # print(person_tuple[0] + ": " + bday + " <-> " + temp)
+
+def get_right_url(arr):
+    temp = ''
+    for i in range(len(arr)):
+        temp = arr[-1]
+        if temp[-1] == ')':
+            for j in range(len(arr)):
+                if ('(') in arr[-1]:
+                    arr = arr[:-1]
+                    break
+                arr = arr[:-1]
+            continue
+        if temp[-1] == ']':
+            for j in range(len(arr)):
+                if ('[') in arr[-1]:
+                    arr = arr[:-1]
+                    break
+                arr = arr[:-1]
+            continue
+        if temp[-1] == ' ':
+            arr = arr[:-1]
+            continue
+        break
+    if len(temp) == 0 or has_numbers(temp):
+        return ""
+    temp = temp.split(",")
+    temp = temp[-1].lstrip()
+    return temp
 
 
 def has_numbers(inputString):
@@ -405,4 +444,14 @@ def query(number, pram1, pram2=""):
     return q
 
 
-question()
+def main():
+    str = sys.argv[1]
+    if str == "create":
+        create()
+    elif str == "question":
+        question()
+    else:
+        print("unknown command, please check again")
+    return 0
+
+main()
